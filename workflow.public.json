@@ -1,0 +1,445 @@
+{
+  "name": "OFD Telegram Sales Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 22,
+              "triggerAtMinute": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        96
+      ],
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/Login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Integrator-ID",
+              "value": "={{ $env.TAXCOM_INTEGRATOR_ID }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({login: $env.TAXCOM_LOGIN, password: $env.TAXCOM_PASSWORD, agreementNumber: $env.TAXCOM_AGREEMENT_NUMBER}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        416,
+        96
+      ],
+      "name": "Taxcom Login"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/OutletList",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        592,
+        96
+      ],
+      "name": "Get Outlets"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/KKTList",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $env.TAXCOM_OUTLET_ID }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Taxcom Login').item.json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        784,
+        96
+      ],
+      "name": "Get KKT"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/ShiftList",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fn",
+              "value": "={{ $('Get KKT').first().json.records[0].fnFactoryNumber }}"
+            },
+            {
+              "name": "begin",
+              "value": "={{ $now.startOf('day').toFormat(\"yyyy-MM-dd'T'HH:mm:ss\") }}"
+            },
+            {
+              "name": "end",
+              "value": "={{ $now.endOf('day').toFormat(\"yyyy-MM-dd'T'HH:mm:ss\") }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Taxcom Login').item.json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        976,
+        96
+      ],
+      "name": "Get Shifts"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/ShiftInfo",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fn",
+              "value": "={{ $('Get Shifts').first().json.records[0].fnFactoryNumber }}"
+            },
+            {
+              "name": "shift",
+              "value": "={{ $('Get Shifts').first().json.records[0].shiftNumber }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Taxcom Login').item.json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1152,
+        96
+      ],
+      "name": "Get Shift Info"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/DocumentList",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fn",
+              "value": "={{ $('Get Shifts').first().json.records[0].fnFactoryNumber }}"
+            },
+            {
+              "name": "shift",
+              "value": "={{ $('Get Shifts').first().json.records[0].shiftNumber }}"
+            },
+            {
+              "name": "type",
+              "value": "3"
+            },
+            {
+              "name": "ps",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Taxcom Login').item.json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        96
+      ],
+      "name": "Get Documents"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "records",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        96
+      ],
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "https://api-lk-ofd.taxcom.ru/API/v2/DocumentInfo",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fn",
+              "value": "={{ $json.fnFactoryNumber }}"
+            },
+            {
+              "name": "fd",
+              "value": "={{ $json.fdNumber }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Session-Token",
+              "value": "={{ $('Taxcom Login').item.json.sessionToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        272
+      ],
+      "name": "Get Document Info"
+    },
+    {
+      "parameters": {
+        "jsCode": "const documents = $input.all();\n\n// Данные смены\nconst shiftData = $('Get Shift Info').first().json;\nconst shift = shiftData.shift ?? shiftData;\n\nconst income = shift.income ?? {};\nconst incomeReturn = shift.incomeReturn ?? {};\n\nconst products = new Map();\n\nfor (const item of documents) {\n  const doc = item.json.document;\n\n  if (!doc || typeof doc !== 'object') {\n    continue;\n  }\n\n  // Тег 1059 — позиции чека\n  let receiptItems = doc['1059'] ?? [];\n\n  // На случай, если в чеке всего одна позиция\n  if (!Array.isArray(receiptItems)) {\n    receiptItems = [receiptItems];\n  }\n\n  for (const position of receiptItems) {\n    const quantity = Number(position['1023'] ?? 0);\n    const name = String(position['1030'] ?? 'Без названия').trim();\n    const sumKopecks = Number(position['1043'] ?? 0);\n\n    // ВАЖНО: нулевые позиции тоже сохраняем\n    if (!products.has(name)) {\n      products.set(name, {\n        quantity: 0,\n        sum: 0,\n      });\n    }\n\n    const product = products.get(name);\n\n    product.quantity += quantity;\n    product.sum += sumKopecks;\n  }\n}\n\nfunction formatMoney(kopecks) {\n  return new Intl.NumberFormat('ru-RU', {\n    maximumFractionDigits: 2,\n  }).format(kopecks / 100);\n}\n\nfunction formatQuantity(quantity) {\n  return new Intl.NumberFormat('ru-RU', {\n    maximumFractionDigits: 3,\n  }).format(quantity);\n}\n\n// Дата отчёта\nconst openDate = shift.openDateTime.slice(0, 10);\nconst [year, month, day] = openDate.split('-');\n\nconst reportDate = `${day}.${month}.${year}`;\n\n// Формируем список товаров\nconst lines = [];\n\nfor (const [name, data] of products) {\n  lines.push(\n    `${name} — ${formatQuantity(data.quantity)} — ${formatMoney(data.sum)} ₽`\n  );\n}\n\n// Финансовые итоги\nconst revenue =\n  Number(income.total ?? 0) -\n  Number(incomeReturn.total ?? 0);\n\nconst cash =\n  Number(income.cash ?? 0) -\n  Number(incomeReturn.cash ?? 0);\n\nconst electronic =\n  Number(income.electronic ?? 0) -\n  Number(incomeReturn.electronic ?? 0);\n\nconst receiptCount =\n  Number(income.receiptCount ?? 0);\n\nconst report = [\n  `📊 Продажи за ${reportDate}`,\n  shift.cashier ? `Продавец: ${shift.cashier}` : '',\n  '',\n  ...lines,\n  '',\n  `💰 Выручка: ${formatMoney(revenue)} ₽`,\n  `💵 Наличные: ${formatMoney(cash)} ₽`,\n  `💳 Безнал: ${formatMoney(electronic)} ₽`,\n  `🧾 Чеков: ${receiptCount}`,\n]\n  .filter(Boolean)\n  .join('\\n');\n\nreturn [\n  {\n    json: {\n      report,\n      revenue: revenue / 100,\n      cash: cash / 100,\n      electronic: electronic / 100,\n      receiptCount,\n      products: Object.fromEntries(products),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        272
+      ],
+      "name": "Build Sales Report"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID_SECONDARY }}",
+        "text": "={{ $json.report\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;')\n}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        432
+      ],
+      "name": "Send a message - secondary"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID_PRIMARY }}",
+        "text": "={{ $json.report\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;')\n}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        272
+      ],
+      "name": "Send a message - primary"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Taxcom Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Taxcom Login": {
+      "main": [
+        [
+          {
+            "node": "Get Outlets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Outlets": {
+      "main": [
+        [
+          {
+            "node": "Get KKT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get KKT": {
+      "main": [
+        [
+          {
+            "node": "Get Shifts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Shifts": {
+      "main": [
+        [
+          {
+            "node": "Get Shift Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Shift Info": {
+      "main": [
+        [
+          {
+            "node": "Get Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Documents": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Get Document Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Document Info": {
+      "main": [
+        [
+          {
+            "node": "Build Sales Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Sales Report": {
+      "main": [
+        [
+          {
+            "node": "Send a message - primary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message - secondary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
