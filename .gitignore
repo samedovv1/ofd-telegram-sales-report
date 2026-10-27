@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+
+# n8n local data / databases
+.n8n/
+*.sqlite
+*.sqlite3
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
