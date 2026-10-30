@@ -1,11 +1,27 @@
 .env
 .env.*
-!.env.example
+*.env
+!/.env.example
 
-# n8n local data / databases
+# Private n8n state and exports
 .n8n/
+n8n_data/
+n8n-data/
+backups/
+exports/
 *.sqlite
+*.sqlite-*
 *.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+credentials*.json
+workflow*.json
+!/workflow.public.json
+
+# Python cache
+__pycache__/
+*.py[cod]
 
 # OS / editor files
 .DS_Store

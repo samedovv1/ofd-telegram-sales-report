@@ -1,0 +1,26 @@
+name: Public export security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test publication safeguards
+        run: python3 -m unittest discover -s tests -v
+      - name: Check public files and reachable history
+        run: python3 scripts/check_public_export.py --history
+      - name: Check whitespace
+        run: git show --format= --check HEAD
